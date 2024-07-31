@@ -1,4 +1,5 @@
 import cv2
+import time
 import numpy as np
 import argparse
 import torch
@@ -9,7 +10,7 @@ model = models.mobilenet_v2()
 model.classifier = torch.nn.Sequential(torch.nn.Dropout(0.2),torch.nn.Linear(1280, 29))
 model.load_state_dict(torch.load('gesturenet_weights', map_location=torch.device('cpu')))
 model.eval()
-model = torch.compile(model)
+# model = torch.compile(model)
 
 idx2gesture = ['fist', 'palm', 'other', 'ok', 'other', 'fist', 'ok', 'other',
     'other', 'other', 'other', 'peace', 'finger', 'other', 'other', 'other',
@@ -38,7 +39,7 @@ def main(args):
 
     while True:
         _, image_bgr = cap.read()
-        # image_bgr = cv2.flip(image_bgr, 1)    # reduces fps heavily
+        image_bgr = cv2.flip(image_bgr, 1)    # reduces fps heavily
         image_np = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
         overlay_canvas = image_bgr
         face_seen = True
@@ -71,6 +72,9 @@ def main(args):
         if cv2.waitKey(25) & 0xFF == ord('q'):
             cv2.destroyAllWindows()
             break
+
+        # throttle the FPS
+        time.sleep(0.05)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -112,7 +116,7 @@ if __name__ == '__main__':
         '--num-workers',
         dest='num_workers',
         type=int,
-        default=4,
+        default=8,
         help='Number of workers.')
     parser.add_argument(
         '-q-size',
